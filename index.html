@@ -6,13 +6,15 @@
 <title>The Fifth Floor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Expanded:wght@600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Expanded:wght@700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
 <style>
   :root{
-    --ink:#0a0a0a;
-    --paper:#f4f4f1;
-    --line:rgba(10,10,10,0.14);
-    --line-strong:rgba(10,10,10,0.4);
+    --ink:#0d0d0c;
+    --paper:#f3f1ea;
+    --line:rgba(13,13,12,0.14);
+    --line-strong:rgba(13,13,12,0.42);
+    --brass:#c9a45e;
+    --brass-lo:#8a6d33;
     --pad:clamp(20px,5.5vw,40px);
   }
   *{margin:0;padding:0;box-sizing:border-box;}
@@ -24,385 +26,287 @@
     -webkit-font-smoothing:antialiased;
     overflow-x:hidden;
   }
-  @media (prefers-reduced-motion:reduce){
-    *{animation:none!important;transition:none!important;}
-  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
 
-  /* ====== INTRO OVERLAY (elevator doors) ====== */
-  #intro{
-    position:fixed;inset:0;z-index:100;
-    pointer-events:none;
-    background:#000;
-  }
-  #intro.done{visibility:hidden;}
+  /* ============ ELEVATOR INTRO (transparent — doors reveal the page) ============ */
+  #intro{position:fixed;inset:0;z-index:100;pointer-events:none;background:transparent;}
+  #intro.done{display:none;}
 
-  /* shared brushed-steel surface for both doors */
   .door{
-    position:absolute;top:0;bottom:0;width:50%;z-index:2;
-    overflow:hidden;
+    position:absolute;top:0;bottom:0;width:50%;z-index:2;overflow:hidden;
+    /* near-black brushed gunmetal */
     background:
-      /* vertical brushed grain */
-      repeating-linear-gradient(90deg,
-        rgba(255,255,255,0.045) 0px,
-        rgba(255,255,255,0.045) 1px,
-        rgba(0,0,0,0.18) 2px,
-        rgba(0,0,0,0.0) 3px,
-        rgba(255,255,255,0.02) 4px),
-      /* broad sheen across the metal */
-      linear-gradient(105deg,
-        #2a2c2f 0%,
-        #3a3d41 18%,
-        #46494d 32%,
-        #303336 50%,
-        #3d4044 68%,
-        #2b2d30 85%,
-        #36393d 100%),
-      #2c2e31;
-    transition:transform 1.05s cubic-bezier(.76,0,.24,1);
+      linear-gradient(100deg,
+        #141414 0%,#1f1f20 22%,#2a2a2c 38%,#161617 52%,
+        #232325 66%,#141414 84%,#1c1c1d 100%),
+      #161616;
+    transition:transform 1.15s cubic-bezier(.78,0,.22,1);
     will-change:transform;
   }
   .door.left{left:0;}
   .door.right{right:0;}
 
-  /* bright vertical highlight at the very center seam (door edges) */
-  .door.left::after,.door.right::after{
-    content:"";position:absolute;top:0;bottom:0;width:3px;
-    z-index:3;
+  /* tall recessed vertical panel seams on each door */
+  .door .seams{position:absolute;inset:0;z-index:1;}
+  .door .seams::before,.door .seams::after{
+    content:"";position:absolute;top:0;bottom:0;width:2px;
+    background:linear-gradient(90deg,rgba(0,0,0,0.85),rgba(255,255,255,0.07));
   }
-  .door.left::after{
-    right:0;
-    background:linear-gradient(90deg,rgba(0,0,0,0.5),rgba(255,255,255,0.22));
-  }
-  .door.right::after{
-    left:0;
-    background:linear-gradient(90deg,rgba(255,255,255,0.22),rgba(0,0,0,0.5));
-  }
-  /* a soft reflective vertical band on each door for realism */
-  .door::before{
-    content:"";position:absolute;top:0;bottom:0;
-    width:40%;
-    background:linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent);
-    pointer-events:none;
-  }
-  .door.left::before{left:24%;}
-  .door.right::before{right:24%;}
+  .door.left .seams::before{left:34%;}
+  .door.left .seams::after{left:68%;}
+  .door.right .seams::before{left:32%;}
+  .door.right .seams::after{left:66%;}
+
+  /* faint moving sheen for realism */
+  .door::before{content:"";position:absolute;top:0;bottom:0;left:0;width:55%;z-index:2;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent);}
+  .door.right::before{left:auto;right:0;}
+
+  /* bright center seam where doors meet */
+  .door.left::after,.door.right::after{content:"";position:absolute;top:0;bottom:0;width:2px;z-index:4;}
+  .door.left::after{right:0;background:linear-gradient(90deg,rgba(0,0,0,0.9),rgba(255,255,255,0.13));}
+  .door.right::after{left:0;background:linear-gradient(90deg,rgba(255,255,255,0.13),rgba(0,0,0,0.9));}
 
   #intro.opening .door.left{transform:translateX(-100%);}
   #intro.opening .door.right{transform:translateX(100%);}
 
-  /* recessed floor-indicator panel, mounted above the door seam */
-  .panel{
-    position:absolute;z-index:4;
-    top:clamp(48px,11vh,96px);left:50%;
+  /* minimal floor indicator strip mounted above the seam */
+  .indic{
+    position:absolute;z-index:5;top:clamp(34px,8vh,72px);left:50%;
     transform:translateX(-50%);
-    width:clamp(132px,42vw,168px);
-    padding:12px 0 13px;
-    background:linear-gradient(180deg,#0a0a0a,#141414);
-    border:1px solid rgba(255,255,255,0.10);
-    border-radius:7px;
-    box-shadow:
-      0 2px 0 rgba(255,255,255,0.05),
-      inset 0 1px 3px rgba(0,0,0,0.9),
-      0 10px 30px rgba(0,0,0,0.55);
-    display:flex;align-items:center;justify-content:center;gap:13px;
-    transition:transform .55s cubic-bezier(.7,0,.3,1),opacity .4s ease;
+    display:flex;align-items:center;gap:14px;
+    padding:9px 18px;
+    background:#000;
+    border:1px solid rgba(255,255,255,0.08);
+    box-shadow:inset 0 1px 4px rgba(0,0,0,0.9),0 6px 22px rgba(0,0,0,0.5);
+    transition:transform .5s cubic-bezier(.7,0,.3,1),opacity .4s ease;
   }
-  #intro.opening .panel{transform:translateX(-50%) translateY(-160%);opacity:0;}
-
-  .arrows{
-    display:flex;flex-direction:column;line-height:.62;
-    font-size:14px;
+  #intro.opening .indic{transform:translateX(-50%) translateY(-180%);opacity:0;}
+  .indic .arr{
+    font-size:11px;color:#e8e8e8;line-height:.7;
+    display:flex;flex-direction:column;
   }
-  .arrows .up{color:#ffb13c;text-shadow:0 0 9px rgba(255,150,30,0.8);animation:arrowPulse 1s ease infinite;}
-  .arrows .dn{color:#3a2a12;}
-  @keyframes arrowPulse{0%,100%{opacity:1;}50%{opacity:.35;}}
-
-  .readout-num{
-    font-family:'Space Mono',monospace;
-    font-size:clamp(34px,9vw,46px);font-weight:700;
-    color:#ffae33;
-    text-shadow:0 0 14px rgba(255,150,30,0.85),0 0 2px rgba(255,180,80,1);
-    min-width:1.3ch;text-align:center;
-    letter-spacing:.01em;
+  .indic .arr .u{animation:arrUp 1s ease infinite;}
+  .indic .arr .d{opacity:.18;}
+  @keyframes arrUp{0%,100%{opacity:1;}50%{opacity:.3;}}
+  .indic-num{
+    font-family:'Space Mono',monospace;font-weight:700;
+    font-size:clamp(22px,6vw,30px);
+    color:#f0f0f0;min-width:1.3ch;text-align:center;
+    text-shadow:0 0 10px rgba(255,255,255,0.25);
   }
-  .readout-num.ding{animation:dingPop .4s cubic-bezier(.2,.9,.2,1);}
-  @keyframes dingPop{0%{transform:scale(.92);}55%{transform:scale(1.14);}100%{transform:scale(1);}}
+  .indic-num.ding{animation:dingPop .4s cubic-bezier(.2,.9,.2,1);}
+  @keyframes dingPop{0%{transform:scale(.92);}55%{transform:scale(1.12);}100%{transform:scale(1);}}
 
-  /* ====== FIXED FLOOR INDICATOR (post-load) ====== */
+  /* ============ POST-LOAD CHROME ============ */
   #floorTag{
-    position:fixed;top:var(--pad);right:var(--pad);
-    z-index:40;
-    font-family:'Space Mono',monospace;
-    font-size:12px;font-weight:700;
+    position:fixed;top:var(--pad);right:var(--pad);z-index:40;
+    font-family:'Space Mono',monospace;font-size:12px;font-weight:700;
     display:flex;align-items:center;gap:8px;
     opacity:0;transform:translateY(-6px);
     transition:opacity .6s ease .2s,transform .6s ease .2s;
     mix-blend-mode:difference;color:#fff;
   }
   #floorTag.show{opacity:1;transform:translateY(0);}
-  #floorTag .dot{
-    width:6px;height:6px;border-radius:50%;
-    background:currentColor;
-    animation:blink 2.4s steps(1) infinite;
-  }
+  #floorTag .dot{width:6px;height:6px;border-radius:50%;background:currentColor;animation:blink 2.4s steps(1) infinite;}
   @keyframes blink{0%,70%{opacity:1;}71%,100%{opacity:.25;}}
   #floorNum{display:inline-block;min-width:1ch;text-align:center;}
 
-  /* ====== HEADER ====== */
   header{
-    position:fixed;top:var(--pad);left:var(--pad);
-    z-index:40;mix-blend-mode:difference;color:#fff;
+    position:fixed;top:var(--pad);left:var(--pad);z-index:40;
+    mix-blend-mode:difference;color:#fff;
     opacity:0;transition:opacity .6s ease .2s;
   }
   header.show{opacity:1;}
-  .wordmark{
-    font-family:'Space Mono',monospace;
-    font-size:12px;font-weight:700;
-    letter-spacing:.18em;text-transform:uppercase;
-  }
+  .wordmark{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;}
 
-  /* ====== HERO ====== */
+  /* ============ HERO (centered) ============ */
   .hero{
-    min-height:100svh;min-height:100vh;
-    padding:var(--pad);
-    display:flex;flex-direction:column;
-    justify-content:flex-end;
-    position:relative;
+    min-height:100svh;min-height:100vh;padding:var(--pad);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;position:relative;
   }
-  /* blueprint grid backdrop */
   .hero::before{
     content:"";position:absolute;inset:0;z-index:0;
     background-image:
       linear-gradient(var(--line) 1px,transparent 1px),
       linear-gradient(90deg,var(--line) 1px,transparent 1px);
     background-size:clamp(48px,14vw,84px) clamp(48px,14vw,84px);
-    -webkit-mask-image:linear-gradient(to bottom,transparent,#000 30%,#000 70%,transparent);
-            mask-image:linear-gradient(to bottom,transparent,#000 30%,#000 70%,transparent);
+    -webkit-mask-image:radial-gradient(circle at center,#000 30%,transparent 78%);
+            mask-image:radial-gradient(circle at center,#000 30%,transparent 78%);
     opacity:.5;
   }
+  .hero-inner{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;}
 
-  /* the stacked floors marker, left edge */
-  .stack{
-    position:absolute;left:var(--pad);top:50%;
-    transform:translateY(-50%);z-index:1;
-    display:flex;flex-direction:column-reverse;gap:9px;
-  }
+  /* centered floor stack — vertical, above the title */
+  .stack{display:flex;align-items:flex-end;gap:7px;margin-bottom:26px;height:42px;}
   .stack .fl{
-    font-family:'Space Mono',monospace;
-    font-size:11px;font-weight:700;
-    display:flex;align-items:center;gap:9px;
-    color:var(--line-strong);
-    opacity:0;transform:translateX(-10px);
+    font-family:'Space Mono',monospace;font-size:10px;font-weight:700;
+    color:var(--line-strong);display:flex;flex-direction:column;align-items:center;gap:6px;
+    opacity:0;transform:translateY(8px);
   }
-  .stack .fl .bar{
-    height:1px;background:currentColor;
-    width:14px;transition:width .4s ease;
-  }
+  .stack .fl .bar{width:1px;background:currentColor;height:12px;transition:height .4s ease;}
   .stack .fl.on{color:var(--ink);}
-  .stack .fl.on .bar{width:30px;}
-  .stack .fl.reveal{
-    animation:flIn .5s ease forwards;
-  }
-  @keyframes flIn{to{opacity:1;transform:translateX(0);}}
-
-  .hero-inner{position:relative;z-index:2;}
+  .stack .fl.on .bar{height:30px;}
+  .stack .fl.reveal{animation:flIn .5s ease forwards;}
+  @keyframes flIn{to{opacity:1;transform:translateY(0);}}
 
   .eyebrow{
-    font-family:'Space Mono',monospace;
-    font-size:11px;font-weight:700;
-    letter-spacing:.34em;text-transform:uppercase;
-    color:var(--line-strong);
-    margin-bottom:18px;
-    opacity:0;animation:rise .7s ease forwards .1s;
+    font-family:'Space Mono',monospace;font-size:11px;font-weight:700;
+    letter-spacing:.34em;text-transform:uppercase;color:var(--line-strong);
+    margin-bottom:20px;opacity:0;animation:rise .7s ease forwards .1s;
   }
-
   .title{
-    font-family:'Archivo Expanded','Archivo',sans-serif;
-    font-weight:900;
-    font-size:clamp(54px,17vw,150px);
-    line-height:.82;
-    letter-spacing:-.03em;
-    text-transform:uppercase;
+    font-family:'Archivo Expanded','Archivo',sans-serif;font-weight:900;
+    font-size:clamp(52px,16vw,142px);line-height:.82;letter-spacing:-.03em;text-transform:uppercase;
   }
   .title .l1,.title .l2{display:block;overflow:hidden;}
-  .title .l1 span,.title .l2 span{
-    display:block;transform:translateY(110%);
-  }
+  .title .l1 span,.title .l2 span{display:block;transform:translateY(110%);}
   .title .l1 span{animation:up .8s cubic-bezier(.16,1,.3,1) forwards .15s;}
   .title .l2 span{animation:up .8s cubic-bezier(.16,1,.3,1) forwards .28s;}
-  .title .l2{ -webkit-text-stroke:1.4px var(--ink);color:transparent;}
-
+  .title .l2{-webkit-text-stroke:1.4px var(--ink);color:transparent;}
   @keyframes up{to{transform:translateY(0);}}
   @keyframes rise{to{opacity:1;}}
 
+  .slogan{
+    margin-top:24px;
+    font-family:'Archivo Expanded','Archivo',sans-serif;
+    font-weight:800;
+    font-size:clamp(20px,6vw,32px);
+    letter-spacing:-.01em;
+    opacity:0;animation:rise .7s ease forwards .42s;
+  }
   .lede{
-    margin-top:26px;max-width:30ch;
-    font-size:clamp(15px,4.4vw,19px);
-    font-weight:500;line-height:1.4;
-    color:#1c1c1c;
-    opacity:0;animation:rise .7s ease forwards .5s;
+    margin-top:12px;max-width:34ch;font-size:clamp(15px,4.4vw,19px);
+    font-weight:500;line-height:1.45;color:#1c1c1a;
+    opacity:0;animation:rise .7s ease forwards .54s;
   }
   .lede b{font-weight:700;}
 
-  /* ====== CTA ====== */
+  .subline{
+    margin-top:18px;max-width:30ch;
+    font-family:'Space Mono',monospace;
+    font-size:clamp(13px,3.6vw,16px);
+    letter-spacing:.06em;
+    line-height:1.7;
+    color:#1c1c1a;
+    opacity:0;animation:rise .7s ease forwards .54s;
+  }
+  .subline b{color:var(--ink);}
   .cta-row{
-    margin-top:34px;
-    display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+    margin-top:34px;display:flex;flex-direction:column;align-items:center;gap:16px;
     opacity:0;animation:rise .7s ease forwards .62s;
   }
   .cta{
     -webkit-appearance:none;appearance:none;border:none;cursor:pointer;
     background:var(--ink);color:var(--paper);
-    font-family:'Archivo',sans-serif;font-weight:700;
-    font-size:16px;letter-spacing:.01em;
-    padding:18px 26px;border-radius:0;
-    display:inline-flex;align-items:center;gap:14px;
-    text-decoration:none;
-    position:relative;overflow:hidden;
-    transition:transform .25s ease;
+    font-family:'Archivo',sans-serif;font-weight:700;font-size:16px;
+    padding:18px 30px;border-radius:0;
+    display:inline-flex;align-items:center;gap:14px;text-decoration:none;
+    position:relative;overflow:hidden;transition:transform .25s ease;
   }
-  .cta .lbl{position:relative;z-index:2;}
-  .cta .arw{
-    position:relative;z-index:2;
-    font-family:'Space Mono',monospace;font-weight:700;
-    transition:transform .3s ease;
-  }
-  .cta::after{
-    content:"";position:absolute;inset:0;z-index:1;
-    background:#2b2b2b;transform:translateY(101%);
-    transition:transform .3s ease;
-  }
+  .cta .lbl,.cta .arw{position:relative;z-index:2;}
+  .cta .arw{font-family:'Space Mono',monospace;font-weight:700;transition:transform .3s ease;}
+  .cta::after{content:"";position:absolute;inset:0;z-index:1;background:#2b2b28;transform:translateY(101%);transition:transform .3s ease;}
   .cta:hover::after{transform:translateY(0);}
-  .cta:hover .arw{transform:translateX(5px);}
+  .cta:hover .arw{transform:translateY(-4px);}
   .cta:active{transform:scale(.98);}
   .cta:focus-visible{outline:3px solid var(--ink);outline-offset:3px;}
+  .meta{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.04em;color:var(--line-strong);line-height:1.6;}
 
-  .meta{
-    font-family:'Space Mono',monospace;
-    font-size:11px;letter-spacing:.04em;
-    color:var(--line-strong);line-height:1.6;
-  }
-
-  /* bottom hairline footer in hero */
   .hero-foot{
-    position:relative;z-index:2;
-    margin-top:40px;padding-top:16px;
-    border-top:1px solid var(--line);
+    position:absolute;left:var(--pad);right:var(--pad);bottom:var(--pad);z-index:2;
+    padding-top:14px;border-top:1px solid var(--line);
     display:flex;justify-content:space-between;
-    font-family:'Space Mono',monospace;
-    font-size:10px;letter-spacing:.16em;text-transform:uppercase;
-    color:var(--line-strong);
-    opacity:0;animation:rise .7s ease forwards .7s;
-  }
-
-  @media (min-width:720px){
-    .lede{max-width:42ch;}
-    .stack{gap:12px;}
+    font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--line-strong);
+    opacity:0;animation:rise .7s ease forwards .8s;
   }
 </style>
 </head>
 <body>
 
-  <!-- INTRO: ELEVATOR DOORS -->
+  <!-- ELEVATOR INTRO -->
   <div id="intro">
-    <div class="door left"></div>
-    <div class="door right"></div>
-    <div class="panel">
-      <div class="arrows"><span class="up">▲</span><span class="dn">▼</span></div>
-      <div class="readout-num" id="readout">1</div>
+    <div class="door left"><div class="seams"></div></div>
+    <div class="door right"><div class="seams"></div></div>
+    <div class="indic">
+      <div class="arr"><span class="u">▲</span><span class="d">▼</span></div>
+      <div class="indic-num" id="indicNum">1</div>
     </div>
   </div>
 
-  <!-- POST-LOAD CHROME -->
   <header id="header"><div class="wordmark">The Fifth Floor</div></header>
   <div id="floorTag"><span class="dot"></span><span>FL</span><span id="floorNum">5</span></div>
 
   <!-- HERO -->
   <main class="hero">
-    <div class="stack" id="stack">
-      <div class="fl" data-f="1"><span class="bar"></span>01</div>
-      <div class="fl" data-f="2"><span class="bar"></span>02</div>
-      <div class="fl" data-f="3"><span class="bar"></span>03</div>
-      <div class="fl" data-f="4"><span class="bar"></span>04</div>
-      <div class="fl on" data-f="5"><span class="bar"></span>05</div>
-    </div>
-
     <div class="hero-inner">
+      <div class="stack" id="stack">
+        <div class="fl" data-f="1"><span class="bar"></span>1</div>
+        <div class="fl" data-f="2"><span class="bar"></span>2</div>
+        <div class="fl" data-f="3"><span class="bar"></span>3</div>
+        <div class="fl" data-f="4"><span class="bar"></span>4</div>
+        <div class="fl on" data-f="5"><span class="bar"></span>5</div>
+      </div>
       <div class="eyebrow">New York · Eyes on the ground</div>
       <h1 class="title">
         <span class="l1"><span>The Fifth</span></span>
         <span class="l2"><span>Floor</span></span>
       </h1>
-      <p class="lede">A real estate professional tours the apartment <b>for you</b> — and tells you straight whether it's worth signing.</p>
-
+      <p class="slogan">Don't sign blind.</p>
+      <p class="subline">No commission. No agenda. Just the truth.</p>
       <div class="cta-row">
-        <a class="cta" href="#book" id="bookBtn">
-          <span class="lbl">Send someone up</span>
-          <span class="arw">↑</span>
-        </a>
-        <div class="meta">Can't make the showing?<br/>We go in your place.</div>
-      </div>
-
-      <div class="hero-foot">
-        <span>EST. NYC</span>
-        <span>Tours · Reports · Reads</span>
+        <a class="cta" href="#book" id="bookBtn"><span class="lbl">Send someone up</span><span class="arw">↑</span></a>
+        <div class="meta">Can't make the showing? We go in your place.</div>
       </div>
     </div>
+    <div class="hero-foot"><span>EST. NYC</span><span>Tours · Reports · Reads</span></div>
   </main>
 
 <script>
 (function(){
-  var reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  var reduce=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
   var intro=document.getElementById('intro');
-  var readout=document.getElementById('readout');
   var header=document.getElementById('header');
   var floorTag=document.getElementById('floorTag');
   var stack=document.getElementById('stack');
+  var indicNum=document.getElementById('indicNum');
 
   function revealSite(){
     header.classList.add('show');
     floorTag.classList.add('show');
-    var fls=stack.querySelectorAll('.fl');
-    fls.forEach(function(f,i){
-      setTimeout(function(){f.classList.add('reveal');}, 120*i);
+    stack.querySelectorAll('.fl').forEach(function(f,i){
+      setTimeout(function(){f.classList.add('reveal');},110*i);
     });
   }
-
-  if(reduce){
-    readout.textContent='5';
-    intro.classList.add('done');
+  function openDoors(){
+    intro.classList.add('opening');
     revealSite();
-    return;
+    setTimeout(function(){intro.classList.add('done');},1300);
   }
 
-  // tick floors 1 -> 5
-  var seq=[1,2,3,4,5];
-  var i=0;
+  if(reduce){indicNum.textContent='5';openDoors();return;}
+
+  var i=1;
   var tick=setInterval(function(){
     i++;
-    if(i>=seq.length){
+    if(i>5){
       clearInterval(tick);
-      readout.textContent='5';
-      readout.classList.add('ding');         // arrival pop (the "ding")
-      setTimeout(function(){
-        intro.classList.add('opening');       // doors part
-        revealSite();
-      },480);
-      setTimeout(function(){
-        intro.classList.add('done');          // fully out of the way
-      },1500);
+      indicNum.textContent='5';
+      indicNum.classList.add('ding');
+      setTimeout(openDoors,460);
       return;
     }
-    readout.textContent=seq[i];
-  },180);
+    indicNum.textContent=i;
+  },220);
 
-  // scroll: floor indicator rises as you descend (atmospheric)
+  // failsafe
+  setTimeout(function(){if(!intro.classList.contains('opening'))openDoors();},3000);
+
   var floorNum=document.getElementById('floorNum');
-  var maxFloor=5;
   window.addEventListener('scroll',function(){
     var sc=window.scrollY/Math.max(window.innerHeight*0.9,1);
-    var f=Math.min(maxFloor+Math.floor(sc*4), 12);
-    floorNum.textContent=f;
+    floorNum.textContent=Math.min(5+Math.floor(sc*4),12);
   },{passive:true});
 })();
 </script>
