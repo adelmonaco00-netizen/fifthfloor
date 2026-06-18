@@ -28,45 +28,105 @@
     *{animation:none!important;transition:none!important;}
   }
 
-  /* ====== INTRO OVERLAY (elevator load) ====== */
+  /* ====== INTRO OVERLAY (elevator doors) ====== */
   #intro{
     position:fixed;inset:0;z-index:100;
-    background:var(--ink);
-    color:var(--paper);
-    display:flex;flex-direction:column;
-    align-items:center;justify-content:center;
-    gap:22px;
-    transition:opacity .5s ease,visibility .5s ease;
+    pointer-events:none;
+    background:#000;
   }
-  #intro.done{opacity:0;visibility:hidden;}
-  .dial{
-    font-family:'Space Mono',monospace;
-    font-size:clamp(64px,26vw,180px);
-    font-weight:700;line-height:.9;
-    letter-spacing:-.04em;
-    position:relative;
-    width:1.2em;text-align:center;
-  }
-  .dial .num{display:inline-block;}
-  .intro-label{
-    font-family:'Space Mono',monospace;
-    font-size:11px;letter-spacing:.5em;
-    text-transform:uppercase;
-    opacity:.55;padding-left:.5em;
-    overflow:hidden;white-space:nowrap;
-  }
-  .intro-rule{
-    width:0;height:1px;background:var(--paper);
-    opacity:.3;
-  }
+  #intro.done{visibility:hidden;}
 
-  /* arriving flourish */
-  @keyframes settle{
-    0%{transform:translateY(8px) scale(.96);}
-    60%{transform:translateY(-3px) scale(1.02);}
-    100%{transform:translateY(0) scale(1);}
+  /* shared brushed-steel surface for both doors */
+  .door{
+    position:absolute;top:0;bottom:0;width:50%;z-index:2;
+    overflow:hidden;
+    background:
+      /* vertical brushed grain */
+      repeating-linear-gradient(90deg,
+        rgba(255,255,255,0.045) 0px,
+        rgba(255,255,255,0.045) 1px,
+        rgba(0,0,0,0.18) 2px,
+        rgba(0,0,0,0.0) 3px,
+        rgba(255,255,255,0.02) 4px),
+      /* broad sheen across the metal */
+      linear-gradient(105deg,
+        #2a2c2f 0%,
+        #3a3d41 18%,
+        #46494d 32%,
+        #303336 50%,
+        #3d4044 68%,
+        #2b2d30 85%,
+        #36393d 100%),
+      #2c2e31;
+    transition:transform 1.05s cubic-bezier(.76,0,.24,1);
+    will-change:transform;
   }
-  .dial.arrived{animation:settle .45s cubic-bezier(.2,.9,.2,1);}
+  .door.left{left:0;}
+  .door.right{right:0;}
+
+  /* bright vertical highlight at the very center seam (door edges) */
+  .door.left::after,.door.right::after{
+    content:"";position:absolute;top:0;bottom:0;width:3px;
+    z-index:3;
+  }
+  .door.left::after{
+    right:0;
+    background:linear-gradient(90deg,rgba(0,0,0,0.5),rgba(255,255,255,0.22));
+  }
+  .door.right::after{
+    left:0;
+    background:linear-gradient(90deg,rgba(255,255,255,0.22),rgba(0,0,0,0.5));
+  }
+  /* a soft reflective vertical band on each door for realism */
+  .door::before{
+    content:"";position:absolute;top:0;bottom:0;
+    width:40%;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent);
+    pointer-events:none;
+  }
+  .door.left::before{left:24%;}
+  .door.right::before{right:24%;}
+
+  #intro.opening .door.left{transform:translateX(-100%);}
+  #intro.opening .door.right{transform:translateX(100%);}
+
+  /* recessed floor-indicator panel, mounted above the door seam */
+  .panel{
+    position:absolute;z-index:4;
+    top:clamp(48px,11vh,96px);left:50%;
+    transform:translateX(-50%);
+    width:clamp(132px,42vw,168px);
+    padding:12px 0 13px;
+    background:linear-gradient(180deg,#0a0a0a,#141414);
+    border:1px solid rgba(255,255,255,0.10);
+    border-radius:7px;
+    box-shadow:
+      0 2px 0 rgba(255,255,255,0.05),
+      inset 0 1px 3px rgba(0,0,0,0.9),
+      0 10px 30px rgba(0,0,0,0.55);
+    display:flex;align-items:center;justify-content:center;gap:13px;
+    transition:transform .55s cubic-bezier(.7,0,.3,1),opacity .4s ease;
+  }
+  #intro.opening .panel{transform:translateX(-50%) translateY(-160%);opacity:0;}
+
+  .arrows{
+    display:flex;flex-direction:column;line-height:.62;
+    font-size:14px;
+  }
+  .arrows .up{color:#ffb13c;text-shadow:0 0 9px rgba(255,150,30,0.8);animation:arrowPulse 1s ease infinite;}
+  .arrows .dn{color:#3a2a12;}
+  @keyframes arrowPulse{0%,100%{opacity:1;}50%{opacity:.35;}}
+
+  .readout-num{
+    font-family:'Space Mono',monospace;
+    font-size:clamp(34px,9vw,46px);font-weight:700;
+    color:#ffae33;
+    text-shadow:0 0 14px rgba(255,150,30,0.85),0 0 2px rgba(255,180,80,1);
+    min-width:1.3ch;text-align:center;
+    letter-spacing:.01em;
+  }
+  .readout-num.ding{animation:dingPop .4s cubic-bezier(.2,.9,.2,1);}
+  @keyframes dingPop{0%{transform:scale(.92);}55%{transform:scale(1.14);}100%{transform:scale(1);}}
 
   /* ====== FIXED FLOOR INDICATOR (post-load) ====== */
   #floorTag{
@@ -243,11 +303,14 @@
 </head>
 <body>
 
-  <!-- INTRO ELEVATOR LOAD -->
+  <!-- INTRO: ELEVATOR DOORS -->
   <div id="intro">
-    <div class="intro-rule" id="introRule"></div>
-    <div class="dial" id="dial"><span class="num">1</span></div>
-    <div class="intro-label" id="introLabel">ARRIVING</div>
+    <div class="door left"></div>
+    <div class="door right"></div>
+    <div class="panel">
+      <div class="arrows"><span class="up">▲</span><span class="dn">▼</span></div>
+      <div class="readout-num" id="readout">1</div>
+    </div>
   </div>
 
   <!-- POST-LOAD CHROME -->
@@ -290,11 +353,8 @@
 <script>
 (function(){
   var reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
-  var dial=document.getElementById('dial');
-  var numEl=dial.querySelector('.num');
   var intro=document.getElementById('intro');
-  var introLabel=document.getElementById('introLabel');
-  var introRule=document.getElementById('introRule');
+  var readout=document.getElementById('readout');
   var header=document.getElementById('header');
   var floorTag=document.getElementById('floorTag');
   var stack=document.getElementById('stack');
@@ -302,7 +362,6 @@
   function revealSite(){
     header.classList.add('show');
     floorTag.classList.add('show');
-    // cascade the floor stack
     var fls=stack.querySelectorAll('.fl');
     fls.forEach(function(f,i){
       setTimeout(function(){f.classList.add('reveal');}, 120*i);
@@ -310,36 +369,34 @@
   }
 
   if(reduce){
-    numEl.textContent='5';
+    readout.textContent='5';
     intro.classList.add('done');
     revealSite();
     return;
   }
 
-  // rule draws in
-  setTimeout(function(){ introRule.style.transition='width .5s ease'; introRule.style.width='120px'; },60);
-
-  // tick 1 -> 5, snappy
+  // tick floors 1 -> 5
   var seq=[1,2,3,4,5];
   var i=0;
   var tick=setInterval(function(){
     i++;
     if(i>=seq.length){
       clearInterval(tick);
-      numEl.textContent='5';
-      dial.classList.add('arrived');
-      introLabel.textContent='FIFTH FLOOR';
-      introLabel.style.opacity='.9';
+      readout.textContent='5';
+      readout.classList.add('ding');         // arrival pop (the "ding")
       setTimeout(function(){
-        intro.classList.add('done');
+        intro.classList.add('opening');       // doors part
         revealSite();
-      },560);
+      },480);
+      setTimeout(function(){
+        intro.classList.add('done');          // fully out of the way
+      },1500);
       return;
     }
-    numEl.textContent=seq[i];
-  },190);
+    readout.textContent=seq[i];
+  },180);
 
-  // scroll: floor indicator rises 5 -> up as you descend (atmospheric)
+  // scroll: floor indicator rises as you descend (atmospheric)
   var floorNum=document.getElementById('floorNum');
   var maxFloor=5;
   window.addEventListener('scroll',function(){
