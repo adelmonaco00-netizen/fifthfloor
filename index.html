@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>The Fifth Floor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Archivo+Expanded:wght@600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --ink:#0a0a0a;
+    --paper:#f4f4f1;
+    --line:rgba(10,10,10,0.14);
+    --line-strong:rgba(10,10,10,0.4);
+    --pad:clamp(20px,5.5vw,40px);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Archivo',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important;}
+  }
+
+  /* ====== INTRO OVERLAY (elevator load) ====== */
+  #intro{
+    position:fixed;inset:0;z-index:100;
+    background:var(--ink);
+    color:var(--paper);
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    gap:22px;
+    transition:opacity .5s ease,visibility .5s ease;
+  }
+  #intro.done{opacity:0;visibility:hidden;}
+  .dial{
+    font-family:'Space Mono',monospace;
+    font-size:clamp(64px,26vw,180px);
+    font-weight:700;line-height:.9;
+    letter-spacing:-.04em;
+    position:relative;
+    width:1.2em;text-align:center;
+  }
+  .dial .num{display:inline-block;}
+  .intro-label{
+    font-family:'Space Mono',monospace;
+    font-size:11px;letter-spacing:.5em;
+    text-transform:uppercase;
+    opacity:.55;padding-left:.5em;
+    overflow:hidden;white-space:nowrap;
+  }
+  .intro-rule{
+    width:0;height:1px;background:var(--paper);
+    opacity:.3;
+  }
+
+  /* arriving flourish */
+  @keyframes settle{
+    0%{transform:translateY(8px) scale(.96);}
+    60%{transform:translateY(-3px) scale(1.02);}
+    100%{transform:translateY(0) scale(1);}
+  }
+  .dial.arrived{animation:settle .45s cubic-bezier(.2,.9,.2,1);}
+
+  /* ====== FIXED FLOOR INDICATOR (post-load) ====== */
+  #floorTag{
+    position:fixed;top:var(--pad);right:var(--pad);
+    z-index:40;
+    font-family:'Space Mono',monospace;
+    font-size:12px;font-weight:700;
+    display:flex;align-items:center;gap:8px;
+    opacity:0;transform:translateY(-6px);
+    transition:opacity .6s ease .2s,transform .6s ease .2s;
+    mix-blend-mode:difference;color:#fff;
+  }
+  #floorTag.show{opacity:1;transform:translateY(0);}
+  #floorTag .dot{
+    width:6px;height:6px;border-radius:50%;
+    background:currentColor;
+    animation:blink 2.4s steps(1) infinite;
+  }
+  @keyframes blink{0%,70%{opacity:1;}71%,100%{opacity:.25;}}
+  #floorNum{display:inline-block;min-width:1ch;text-align:center;}
+
+  /* ====== HEADER ====== */
+  header{
+    position:fixed;top:var(--pad);left:var(--pad);
+    z-index:40;mix-blend-mode:difference;color:#fff;
+    opacity:0;transition:opacity .6s ease .2s;
+  }
+  header.show{opacity:1;}
+  .wordmark{
+    font-family:'Space Mono',monospace;
+    font-size:12px;font-weight:700;
+    letter-spacing:.18em;text-transform:uppercase;
+  }
+
+  /* ====== HERO ====== */
+  .hero{
+    min-height:100svh;min-height:100vh;
+    padding:var(--pad);
+    display:flex;flex-direction:column;
+    justify-content:flex-end;
+    position:relative;
+  }
+  /* blueprint grid backdrop */
+  .hero::before{
+    content:"";position:absolute;inset:0;z-index:0;
+    background-image:
+      linear-gradient(var(--line) 1px,transparent 1px),
+      linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:clamp(48px,14vw,84px) clamp(48px,14vw,84px);
+    -webkit-mask-image:linear-gradient(to bottom,transparent,#000 30%,#000 70%,transparent);
+            mask-image:linear-gradient(to bottom,transparent,#000 30%,#000 70%,transparent);
+    opacity:.5;
+  }
+
+  /* the stacked floors marker, left edge */
+  .stack{
+    position:absolute;left:var(--pad);top:50%;
+    transform:translateY(-50%);z-index:1;
+    display:flex;flex-direction:column-reverse;gap:9px;
+  }
+  .stack .fl{
+    font-family:'Space Mono',monospace;
+    font-size:11px;font-weight:700;
+    display:flex;align-items:center;gap:9px;
+    color:var(--line-strong);
+    opacity:0;transform:translateX(-10px);
+  }
+  .stack .fl .bar{
+    height:1px;background:currentColor;
+    width:14px;transition:width .4s ease;
+  }
+  .stack .fl.on{color:var(--ink);}
+  .stack .fl.on .bar{width:30px;}
+  .stack .fl.reveal{
+    animation:flIn .5s ease forwards;
+  }
+  @keyframes flIn{to{opacity:1;transform:translateX(0);}}
+
+  .hero-inner{position:relative;z-index:2;}
+
+  .eyebrow{
+    font-family:'Space Mono',monospace;
+    font-size:11px;font-weight:700;
+    letter-spacing:.34em;text-transform:uppercase;
+    color:var(--line-strong);
+    margin-bottom:18px;
+    opacity:0;animation:rise .7s ease forwards .1s;
+  }
+
+  .title{
+    font-family:'Archivo Expanded','Archivo',sans-serif;
+    font-weight:900;
+    font-size:clamp(54px,17vw,150px);
+    line-height:.82;
+    letter-spacing:-.03em;
+    text-transform:uppercase;
+  }
+  .title .l1,.title .l2{display:block;overflow:hidden;}
+  .title .l1 span,.title .l2 span{
+    display:block;transform:translateY(110%);
+  }
+  .title .l1 span{animation:up .8s cubic-bezier(.16,1,.3,1) forwards .15s;}
+  .title .l2 span{animation:up .8s cubic-bezier(.16,1,.3,1) forwards .28s;}
+  .title .l2{ -webkit-text-stroke:1.4px var(--ink);color:transparent;}
+
+  @keyframes up{to{transform:translateY(0);}}
+  @keyframes rise{to{opacity:1;}}
+
+  .lede{
+    margin-top:26px;max-width:30ch;
+    font-size:clamp(15px,4.4vw,19px);
+    font-weight:500;line-height:1.4;
+    color:#1c1c1c;
+    opacity:0;animation:rise .7s ease forwards .5s;
+  }
+  .lede b{font-weight:700;}
+
+  /* ====== CTA ====== */
+  .cta-row{
+    margin-top:34px;
+    display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+    opacity:0;animation:rise .7s ease forwards .62s;
+  }
+  .cta{
+    -webkit-appearance:none;appearance:none;border:none;cursor:pointer;
+    background:var(--ink);color:var(--paper);
+    font-family:'Archivo',sans-serif;font-weight:700;
+    font-size:16px;letter-spacing:.01em;
+    padding:18px 26px;border-radius:0;
+    display:inline-flex;align-items:center;gap:14px;
+    text-decoration:none;
+    position:relative;overflow:hidden;
+    transition:transform .25s ease;
+  }
+  .cta .lbl{position:relative;z-index:2;}
+  .cta .arw{
+    position:relative;z-index:2;
+    font-family:'Space Mono',monospace;font-weight:700;
+    transition:transform .3s ease;
+  }
+  .cta::after{
+    content:"";position:absolute;inset:0;z-index:1;
+    background:#2b2b2b;transform:translateY(101%);
+    transition:transform .3s ease;
+  }
+  .cta:hover::after{transform:translateY(0);}
+  .cta:hover .arw{transform:translateX(5px);}
+  .cta:active{transform:scale(.98);}
+  .cta:focus-visible{outline:3px solid var(--ink);outline-offset:3px;}
+
+  .meta{
+    font-family:'Space Mono',monospace;
+    font-size:11px;letter-spacing:.04em;
+    color:var(--line-strong);line-height:1.6;
+  }
+
+  /* bottom hairline footer in hero */
+  .hero-foot{
+    position:relative;z-index:2;
+    margin-top:40px;padding-top:16px;
+    border-top:1px solid var(--line);
+    display:flex;justify-content:space-between;
+    font-family:'Space Mono',monospace;
+    font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--line-strong);
+    opacity:0;animation:rise .7s ease forwards .7s;
+  }
+
+  @media (min-width:720px){
+    .lede{max-width:42ch;}
+    .stack{gap:12px;}
+  }
+</style>
+</head>
+<body>
+
+  <!-- INTRO ELEVATOR LOAD -->
+  <div id="intro">
+    <div class="intro-rule" id="introRule"></div>
+    <div class="dial" id="dial"><span class="num">1</span></div>
+    <div class="intro-label" id="introLabel">ARRIVING</div>
+  </div>
+
+  <!-- POST-LOAD CHROME -->
+  <header id="header"><div class="wordmark">The Fifth Floor</div></header>
+  <div id="floorTag"><span class="dot"></span><span>FL</span><span id="floorNum">5</span></div>
+
+  <!-- HERO -->
+  <main class="hero">
+    <div class="stack" id="stack">
+      <div class="fl" data-f="1"><span class="bar"></span>01</div>
+      <div class="fl" data-f="2"><span class="bar"></span>02</div>
+      <div class="fl" data-f="3"><span class="bar"></span>03</div>
+      <div class="fl" data-f="4"><span class="bar"></span>04</div>
+      <div class="fl on" data-f="5"><span class="bar"></span>05</div>
+    </div>
+
+    <div class="hero-inner">
+      <div class="eyebrow">New York · Eyes on the ground</div>
+      <h1 class="title">
+        <span class="l1"><span>The Fifth</span></span>
+        <span class="l2"><span>Floor</span></span>
+      </h1>
+      <p class="lede">A real estate professional tours the apartment <b>for you</b> — and tells you straight whether it's worth signing.</p>
+
+      <div class="cta-row">
+        <a class="cta" href="#book" id="bookBtn">
+          <span class="lbl">Send someone up</span>
+          <span class="arw">↑</span>
+        </a>
+        <div class="meta">Can't make the showing?<br/>We go in your place.</div>
+      </div>
+
+      <div class="hero-foot">
+        <span>EST. NYC</span>
+        <span>Tours · Reports · Reads</span>
+      </div>
+    </div>
+  </main>
+
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+  var dial=document.getElementById('dial');
+  var numEl=dial.querySelector('.num');
+  var intro=document.getElementById('intro');
+  var introLabel=document.getElementById('introLabel');
+  var introRule=document.getElementById('introRule');
+  var header=document.getElementById('header');
+  var floorTag=document.getElementById('floorTag');
+  var stack=document.getElementById('stack');
+
+  function revealSite(){
+    header.classList.add('show');
+    floorTag.classList.add('show');
+    // cascade the floor stack
+    var fls=stack.querySelectorAll('.fl');
+    fls.forEach(function(f,i){
+      setTimeout(function(){f.classList.add('reveal');}, 120*i);
+    });
+  }
+
+  if(reduce){
+    numEl.textContent='5';
+    intro.classList.add('done');
+    revealSite();
+    return;
+  }
+
+  // rule draws in
+  setTimeout(function(){ introRule.style.transition='width .5s ease'; introRule.style.width='120px'; },60);
+
+  // tick 1 -> 5, snappy
+  var seq=[1,2,3,4,5];
+  var i=0;
+  var tick=setInterval(function(){
+    i++;
+    if(i>=seq.length){
+      clearInterval(tick);
+      numEl.textContent='5';
+      dial.classList.add('arrived');
+      introLabel.textContent='FIFTH FLOOR';
+      introLabel.style.opacity='.9';
+      setTimeout(function(){
+        intro.classList.add('done');
+        revealSite();
+      },560);
+      return;
+    }
+    numEl.textContent=seq[i];
+  },190);
+
+  // scroll: floor indicator rises 5 -> up as you descend (atmospheric)
+  var floorNum=document.getElementById('floorNum');
+  var maxFloor=5;
+  window.addEventListener('scroll',function(){
+    var sc=window.scrollY/Math.max(window.innerHeight*0.9,1);
+    var f=Math.min(maxFloor+Math.floor(sc*4), 12);
+    floorNum.textContent=f;
+  },{passive:true});
+})();
+</script>
+</body>
+</html>
